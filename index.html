@@ -71,37 +71,43 @@
     </div>
   </main>
 
-  <script>
-    const BOT = "https://discord.com/oauth2/authorize?client_id=1435865601196294204"; // ← CHANGE THIS
-    const CLIENT_ID = "1435865601196294204"; // ← CHANGE THIS
+ <script>
+  const BOT = "https://discord.com/oauth2/authorize?client_id=1435865601196294204";  // ← change later
+  const CLIENT_ID = "1435865601196294204";           // ← YOUR REAL ID
+  const REDIRECT = encodeURIComponent(location.href);
 
-    // CONNECT DISCORD
-    document.getElementById('discordBtn').onclick = () => {
-      if (localStorage.discordId) {
-        localStorage.clear();
-        location.reload();
-        return;
-      }
-      location.href = `https://discord.com/oauth2/authorize?client_id=${CLIENT_ID}&scope=identify&response_type=token&redirect_uri=${encodeURIComponent(location.href)}`;
-    };
-
-    // AUTO LOGIN
-    if (location.hash.includes('access_token')) {
-      const token = location.hash.split('access_token=')[1].split('&')[0];
-      fetch('https://discord.com/api/users/@me', {headers:{Authorization:`Bearer ${token}`}})
-        .then(r=>r.json())
-        .then(u=>{
-          localStorage.discordId = u.id;
-          localStorage.discordTag = u.username;
-          document.getElementById('discordBtn').textContent = `Connected: ${u.username}`;
-          document.getElementById('discordBtn').style.background = '#5865F2';
-          history.replaceState({},'',location.pathname);
-          alert('Connected! Pick a pack!');
-        });
-    }
+  document.getElementById('discordBtn').onclick = () => {
     if (localStorage.discordId) {
-      document.getElementById('discordBtn').textContent = `Connected: ${localStorage.discordTag}`;
-      document.getElementById('discordBtn').style.background = '#5865F2';
+      localStorage.clear(); location.reload(); return;
     }
+    location.href = `https://discord.com/oauth2/authorize?client_id=${CLIENT_ID}&scope=identify&response_type=token&redirect_uri=${REDIRECT}&prompt=none`;
+  };
 
-    // GIVE ROLE
+  if (location.hash.includes('access_token')) {
+    const token = location.hash.split('access_token=')[1].split('&')[0];
+    fetch('https://discord.com/api/users/@me', {headers:{Authorization:`Bearer ${token}`}})
+      .then(r=>r.json())
+      .then(u=>{
+        localStorage.discordId = u.id;
+        localStorage.discordTag = u.username;
+        document.getElementById('discordBtn').textContent = `Connected: ${u.username}`;
+        document.getElementById('discordBtn').style.background = '#5865F2';
+        history.replaceState({},'',location.pathname);
+      });
+  }
+  if (localStorage.discordId) {
+    document.getElementById('discordBtn').textContent = `Connected: ${localStorage.discordTag}`;
+    document.getElementById('discordBtn').style.background = '#5865F2';
+  }
+
+  async function buy(pack) {
+    if (!localStorage.discordId) return alert('Connect Discord first!');
+    if (!confirm(`Get ${pack} role?`)) return;
+    const res = await fetch(`${BOT}/give`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({userId:localStorage.discordId, pack})
+    });
+    alert(await res.text());
+  }
+</script>
