@@ -61,12 +61,7 @@
     .wide {
       width: 100%;
     }
-    .paypal-button-container {
-      margin-top: 1rem;
-    }
   </style>
-  <!-- PayPal SDK -->
-  <script src="https://www.paypal.com/sdk/js?client-id=YOUR_PAYPAL_CLIENT_ID&currency=USD"></script>
 </head>
 <body>
   <header style="padding:1rem 0;position:sticky;top:0;background:rgba(15,15,26,.9);backdrop-filter:blur(10px);z-index:10">
@@ -85,7 +80,7 @@
   <main class="container" id="main" style="padding:4rem 0;">
     <h1 style="font-size:3rem;text-align:center">Donate = Instant Role</h1>
     <p style="text-align:center;font-size:1.2rem;color:#94a3b8">
-      Click Connect → Choose Pack → Role appears in 1 sec
+      Click Connect → Choose Pack → Pay directly
     </p>
 
     <div id="packs" style="display:grid;gap:2rem;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));margin-top:3rem">
@@ -97,7 +92,7 @@
           <li>✔ Starter role</li>
           <li>✔ Priority Support</li>
         </ul>
-        <div id="paypal-starter" class="paypal-button-container"></div>
+        <button class="btn btn-outline wide" onclick="pay('Starter', 5)">Pay $5</button>
       </div>
 
       <!-- FOUNDER -->
@@ -109,7 +104,7 @@
           <li>✔ Gold Founder badge</li>
           <li>✔ Name changes</li>
         </ul>
-        <div id="paypal-founder" class="paypal-button-container"></div>
+        <button class="btn btn-primary wide" onclick="pay('Founder', 10)">Pay $10</button>
       </div>
 
       <!-- ULTIMATE -->
@@ -120,20 +115,20 @@
           <li>✔ Private VC</li>
           <li>✔ Everything from above packs</li>
         </ul>
-        <div id="paypal-ultimate" class="paypal-button-container"></div>
+        <button class="btn btn-outline wide" onclick="pay('ULTIMATE', 15)">Pay $15</button>
       </div>
     </div>
   </main>
 
   <script>
-    const BOT_API = "https://3b825c63.wispbyte.com";
-    const CLIENT_ID = "1435865601196294204";
-    const REDIRECT = encodeURIComponent(window.location.origin + window.location.pathname);
     const discordBtn = document.getElementById("discordBtn");
 
-    // Connect Discord
+    // Connect Discord (cosmetic only)
+    const CLIENT_ID = "1435865601196294204";
+    const REDIRECT = encodeURIComponent(window.location.origin + window.location.pathname);
+
     discordBtn.onclick = () => {
-      if (localStorage.discordId) {
+      if (localStorage.discordTag) {
         localStorage.clear();
         location.reload();
         return;
@@ -142,69 +137,32 @@
       window.location.href = url;
     };
 
-    // Handle OAuth redirect
     if (location.hash.includes("access_token")) {
       const token = new URLSearchParams(location.hash.slice(1)).get("access_token");
       fetch("https://discord.com/api/users/@me", {
         headers: { Authorization: `Bearer ${token}` }
       })
-        .then(r => r.json())
-        .then(u => {
-          localStorage.discordId = u.id;
-          localStorage.discordTag = u.username;
-          discordBtn.textContent = `Connected: ${u.username}`;
-          discordBtn.style.background = "transparent";
-          discordBtn.style.color = "#fff";
-          discordBtn.style.border = "2px solid var(--p)";
-          history.replaceState({}, "", location.pathname);
-        })
-        .catch(() => alert("Failed to connect Discord"));
+      .then(r => r.json())
+      .then(u => {
+        localStorage.discordTag = u.username;
+        discordBtn.textContent = `Connected: ${u.username}`;
+        discordBtn.style.background = "transparent";
+        history.replaceState({}, "", location.pathname);
+      })
+      .catch(() => alert("Failed to connect Discord"));
     }
 
-    // Show connected on page load
-    if (localStorage.discordId) {
+    if (localStorage.discordTag) {
       discordBtn.textContent = `Connected: ${localStorage.discordTag}`;
       discordBtn.style.background = "transparent";
-      discordBtn.style.color = "#fff";
-      discordBtn.style.border = "2px solid var(--p)";
     }
 
-    // PayPal Buttons
-    function renderPayPalButton(containerId, amount, pack) {
-      paypal.Buttons({
-        style: { layout: 'horizontal', color: 'blue', shape: 'rect', label: 'paypal' },
-        createOrder: function(data, actions) {
-          if (!localStorage.discordId) {
-            alert("Connect Discord first!");
-            return;
-          }
-          return actions.order.create({
-            purchase_units: [{ amount: { value: amount } }]
-          });
-        },
-        onApprove: function(data, actions) {
-          return actions.order.capture().then(function(details) {
-            // Call your backend after successful payment
-            fetch(`${BOT_API}/give`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                userId: localStorage.discordId,
-                pack: pack
-              })
-            })
-              .then(res => res.text())
-              .then(text => alert("Payment successful! " + text))
-              .catch(e => alert("Something went wrong: " + e.message));
-          });
-        }
-      }).render(`#${containerId}`);
+    // Pay function (just redirects to your payment page)
+    function pay(pack, amount) {
+      // Replace this with your actual payment link
+      let paymentUrl = `https://your-payment-site.com/pay?pack=${pack}&amount=${amount}`;
+      window.open(paymentUrl, "_blank");
     }
-
-    // Render buttons for each pack
-    renderPayPalButton("paypal-starter", "5.00", "Starter");
-    renderPayPalButton("paypal-founder", "10.00", "Founder");
-    renderPayPalButton("paypal-ultimate", "15.00", "Ultimate");
   </script>
 </body>
 </html>
